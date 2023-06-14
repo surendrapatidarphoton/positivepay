@@ -1,25 +1,37 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { AppContext } from "../../../appContext";
 import ViewData from "../../view/view";
-// const ACCEPTED_FILE_TYPES = [
-//   "text/plain",
-//   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+import Preview from "../../view/preview";
 
-// ];
 function UploadFIle() {
-  const [fileData, setFileData] = useState<any>();
+  const [fileData, setFileData] = useState<any>([]);
+  const [radioValue, setradioValue] = useState("comma");
+  const [isFileData, setIsFileData] = useState(false);
+
+  const handleChange = (e) => {
+    setIsFileData(false);
+    setFileData([]);
+    setradioValue(e.target.value);
+  };
+
+  const viewData: any = useMemo(() => {
+    let res = [];
+    fileData.forEach((ele) => {
+      if (radioValue == "comma") {
+        res.push(ele.name + "," + ele.gender);
+      } else if (radioValue == "pipeline") {
+        res.push(ele.name + "|" + ele.gender);
+      }
+    });
+    return res;
+  }, [fileData, radioValue]);
 
   const changeHandler = (event: any) => {
+    setIsFileData(false);
+    // setFileData([]);
     const reader = new FileReader();
     const file = event.target.files[0];
-    // console.log(
-    //   "file",
-    //   file,
-    //   file.length,
-    //   event.target.files,
-    //   event.target.files.length
-    // );
     reader.onload = async (e: any) => {
       const text = e.target.result;
 
@@ -49,6 +61,44 @@ function UploadFIle() {
 
   return (
     <>
+      {/* <ViewFileformat /> */}
+
+      <div className="flex justify-center items-center mt-4">
+        <div className="m-2">File Format</div>
+        <div className="m-2">
+          <input
+            id="comma"
+            type="radio"
+            value="comma"
+            defaultChecked
+            onChange={(e) => handleChange(e)}
+            name="inline-radio-group"
+            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+          />
+          <label
+            htmlFor="comma"
+            className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+          >
+            Comma
+          </label>
+        </div>
+        <div className="m-2">
+          <input
+            id="pipeline"
+            type="radio"
+            value="pipeline"
+            name="inline-radio-group"
+            onChange={(e) => handleChange(e)}
+            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+          />
+          <label
+            htmlFor="pipeline"
+            className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+          >
+            Pipeline
+          </label>
+        </div>
+      </div>
       <div className="flex w-full items-center justify-center bg-grey-lighter p-10">
         <label className="w-64 flex flex-col items-center px-4 py-6 bg-white text-blue rounded-lg shadow-lg tracking-wide uppercase border border-blue cursor-pointer hover:bg-blue hover:text-white">
           <svg
@@ -64,8 +114,18 @@ function UploadFIle() {
         </label>
       </div>
 
-      <AppContext.Provider value={fileData}>
-        <ViewData />
+      <AppContext.Provider value={{ viewData: viewData, fileData: fileData }}>
+        <Preview />
+        <div className="flex justify-center items-center mt-4">
+          <button
+            disabled={fileData.length == 0}
+            onClick={() => setIsFileData(true)}
+            className="bg-blue  text-white font-bold py-2 px-4 rounded"
+          >
+            Submit
+          </button>
+        </div>
+        {isFileData && <ViewData />}
       </AppContext.Provider>
     </>
   );

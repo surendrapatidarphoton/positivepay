@@ -18,7 +18,6 @@ function Preview() {
             })}
         </div>
       </div>
-      ;
     </>
   );
 }

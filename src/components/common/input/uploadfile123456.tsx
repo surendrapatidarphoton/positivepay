@@ -1,28 +1,67 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { AppContext } from "../../../appContext";
+import ViewData from "../../view/view";
+import Preview from "../../view/preview";
 
-function UploadFile() {
-  const [contents, setcontents] = useState("");
+function UploadFIle() {
+  const [fileData, setFileData] = useState<any>([]);
+  const [radioValue, setradioValue] = useState("comma");
+  const [isFileData, setIsFileData] = useState(false);
 
-  function onChooseFile(event: any) {
-    if (typeof window.FileReader !== "function")
-      throw "The file API isn't supported on this browser.";
-    const input = event.target;
-    if (!input)
-      throw "The browser does not properly implement the event object";
-    if (!input.files)
-      throw "This browser does not support the `files` property of the file input.";
-    if (!input.files[0]) return undefined;
-    const file = input.files[0];
-    const fr = new FileReader();
-    fr.onload = async (e: any) => {
+  const handleChange = (e) => {
+    setIsFileData(false);
+    setFileData([]);
+    setradioValue(e.target.value);
+  };
+
+  const viewData: any = useMemo(() => {
+    let res = [];
+    fileData.forEach((ele) => {
+      if (radioValue == "comma") {
+        res.push(ele.name + "," + ele.gender);
+      } else if (radioValue == "pipeline") {
+        res.push(ele.name + "|" + ele.gender);
+      }
+    });
+    return res;
+  }, [fileData, radioValue]);
+
+  const changeHandler = (event: any) => {
+    setIsFileData(false);
+    // setFileData([]);
+    const reader = new FileReader();
+    const file = event.target.files[0];
+    reader.onload = async (e: any) => {
       const text = e.target.result;
-      console.log("text", text);
-      setcontents(text);
+
+      if (file.type) {
+        if (file.type == "text/plain") {
+          setFileData(JSON.parse(text));
+        } else {
+          const wb = XLSX.read(text, { type: "binary" });
+          const wsname = wb.SheetNames[0];
+          const ws = wb.Sheets[wsname];
+          const data: any = XLSX.utils.sheet_to_json(ws, {
+            raw: false,
+          });
+
+          setFileData(data);
+        }
+      }
     };
-    fr.readAsText(file);
-  }
+    if (file.type) {
+      if (file.type == "text/plain") {
+        reader.readAsText(file);
+      } else {
+        reader.readAsBinaryString(file);
+      }
+    }
+  };
+
   return (
     <>
+      {/* <ViewFileformat /> */}
+
       <div className="flex justify-center items-center mt-4">
         <div className="m-2">File Format</div>
         <div className="m-2">
@@ -70,17 +109,17 @@ function UploadFile() {
             <path d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04.74-.12 1.1zM11 11h3l-4-4-4 4h3v3h2v-3z" />
           </svg>
           <span className="mt-2 text-base leading-normal">Select a file</span>
-
-          <input
-            type="file"
-            className="hidden"
-            onChange={(event) => onChooseFile(event)}
-          />
+          <input type="file" className="hidden" onChange={changeHandler} />
         </label>
       </div>
 
-      <div className="flex justify-center items-center mt-4"> {contents}</div>
+      <AppContext.Provider value={{ viewData: viewData, fileData: fileData }}>
+        <Preview />
+
+        {isFileData && <ViewData />}
+      </AppContext.Provider>
     </>
   );
 }
-export default UploadFile;
+
+export default UploadFIle;

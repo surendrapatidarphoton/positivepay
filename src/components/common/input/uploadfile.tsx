@@ -79,7 +79,7 @@ function UploadFile() {
         </label>
       </div>
 
-      <div className="flex justify-center items-center mt-4"> {contents}</div>
+      <div className="flex justify-center"> {contents}</div>
     </>
   );
 }

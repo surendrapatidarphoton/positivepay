@@ -1,8 +1,37 @@
 import { useState } from "react";
+import { any } from "zod";
 
 function UploadFile() {
   const [contents, setcontents] = useState("");
+  const [tableData, setTableData] = useState([]);
+  const [radioValue, setradioValue] = useState(",");
+  const [showTable, setShowtable] = useState(false);
+  const showTableData = () => {
+    setShowtable(true);
+  };
+  const handleChange = (e) => {
+    if (e.target.value == "comma") {
+      setradioValue(",");
+    } else {
+      setradioValue("|");
+    }
+  };
+  function csvToArray(str, delimiter = ",") {
+    const headers = str.slice(0, str.indexOf("\n")).split(delimiter);
+    const rows = str.slice(str.indexOf("\n") + 1).split("\n");
 
+    const arr = rows.map(function (row) {
+      const values = row.split(delimiter);
+      const el = headers.reduce(function (object, header, index) {
+        object[header] = values[index];
+        return object;
+      }, {});
+      return el;
+    });
+
+    // return the array
+    setTableData(arr);
+  }
   function onChooseFile(event: any) {
     if (typeof window.FileReader !== "function")
       throw "The file API isn't supported on this browser.";
@@ -16,8 +45,9 @@ function UploadFile() {
     const fr = new FileReader();
     fr.onload = async (e: any) => {
       const text = e.target.result;
-      console.log("text", text);
       setcontents(text);
+
+      csvToArray(text, radioValue);
     };
     fr.readAsText(file);
   }
@@ -31,6 +61,7 @@ function UploadFile() {
             type="radio"
             value="comma"
             defaultChecked
+            onChange={(e) => handleChange(e)}
             name="inline-radio-group"
             className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
           />
@@ -46,6 +77,7 @@ function UploadFile() {
             id="pipeline"
             type="radio"
             value="pipeline"
+            onChange={(e) => handleChange(e)}
             name="inline-radio-group"
             className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
           />
@@ -57,7 +89,7 @@ function UploadFile() {
           </label>
         </div>
       </div>
-      <div className="flex w-full items-center justify-center bg-grey-lighter p-10">
+      <div className="flex w-full items-center justify-center bg-grey-lighter p-10 ">
         <label className="w-64 flex flex-col items-center px-4 py-6 bg-white text-blue rounded-lg shadow-lg tracking-wide uppercase border border-blue cursor-pointer hover:bg-blue hover:text-white">
           <svg
             className="w-8 h-8"
@@ -76,8 +108,64 @@ function UploadFile() {
           />
         </label>
       </div>
+      <pre className="flex justify-center"> {contents} </pre>
 
-      <div className="flex justify-center"> {contents}</div>
+      <div className="flex justify-center my-10">
+        <button
+          onClick={showTableData}
+          className="bg-blue  text-white font-bold py-2 px-4 rounded"
+        >
+          Convert in to Table
+        </button>
+      </div>
+      {tableData && showTable && (
+        <div className="flex justify-center pt-5">
+          <table className="w-52 text-sm text-left border">
+            <thead className="text-xs border-b bg-gray text-white">
+              <tr>
+                <th scope="col" className="px-6 py-3">
+                  ID
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Name
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Amount
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Code
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Account Number
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {tableData.map((item: any, index: any) => {
+                return (
+                  <tr className="bg-white border-b" key={item.name + index}>
+                    <td scope="row" className="px-6 py-4 font-medium">
+                      {index + 1}
+                    </td>
+                    <td scope="row" className="px-6 py-4 font-medium">
+                      {item.name}
+                    </td>
+                    <td scope="row" className="px-6 py-4 font-medium">
+                      {item.amount}
+                    </td>
+                    <td scope="row" className="px-6 py-4 font-medium">
+                      {item.code}
+                    </td>
+                    <td scope="row" className="px-6 py-4 font-medium">
+                      {item["account number"]}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </>
   );
 }

@@ -6,10 +6,14 @@ function UploadFile() {
   const [tableData, setTableData] = useState([]);
   const [radioValue, setradioValue] = useState(",");
   const [showTable, setShowtable] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
   const showTableData = () => {
     setShowtable(true);
   };
   const handleChange = (e) => {
+    setErrorMessage("");
+
     if (e.target.value == "comma") {
       setradioValue(",");
     } else {
@@ -18,7 +22,10 @@ function UploadFile() {
   };
   function csvToArray(str, delimiter = ",") {
     const headers = str.slice(0, str.indexOf("\n")).split(delimiter);
-    const rows = str.slice(str.indexOf("\n") + 1).split("\n");
+    const rows = str
+      .slice(str.indexOf("\n") + 1)
+      .split("\n")
+      .filter((ele) => ele != "");
 
     const arr = rows.map(function (row) {
       const values = row.split(delimiter);
@@ -45,9 +52,13 @@ function UploadFile() {
     const fr = new FileReader();
     fr.onload = async (e: any) => {
       const text = e.target.result;
-      setcontents(text);
-
-      csvToArray(text, radioValue);
+      if (text.includes(radioValue)) {
+        csvToArray(text, radioValue);
+        setErrorMessage("");
+      } else {
+        let rv = radioValue == "," ? "Comma" : "Pipeline";
+        setErrorMessage(rv + " delimiter is not found.");
+      }
     };
     fr.readAsText(file);
   }
@@ -108,10 +119,12 @@ function UploadFile() {
           />
         </label>
       </div>
+      <pre className="flex justify-center text-red">{errorMessage}</pre>
       <pre className="flex justify-center"> {contents} </pre>
 
       <div className="flex justify-center my-10">
         <button
+          disabled={tableData.length == 0}
           onClick={showTableData}
           className="bg-blue  text-white font-bold py-2 px-4 rounded"
         >

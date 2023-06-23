@@ -7,6 +7,7 @@ export default {
       white: "#fff",
       gray: "#808080",
       lightgray: "#D3D3D3",
+      red: "#FF0000",
     },
     extend: {
       tableLayout: ["hover", "focus"],
